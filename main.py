@@ -116,7 +116,7 @@ def main():
                 sample_sizes=sample_sizes,
                 shifts=np.linspace(0, 6, 13),
                 sim_sizes=sim_sizes,
-                pool_size=10)
+                pool_size=1000)
     df = ImportanceSampling(**args).run()
 
     # Create a pivot table for plotting purposes
