@@ -32,7 +32,7 @@ class ImportanceSampling:
                         'time']
 
     @staticmethod
-    def percentile(data, quantile, pq=()):
+    def percentile(data, quantile, likelihood_ratio=None):
         """
          Using the 'nearest' interpolation method, PERCENTILE will give the desired percentile
          from the DATA at the supplied QUANTILE.
@@ -42,15 +42,15 @@ class ImportanceSampling:
          Note that pq=() and (p,p) will give the regular percentile.
         :param data: numpy array
         :param quantile: quantile as percentage, e.g. 90 for the 90% percentile.
-        :param pq: empty or (p,q) where p and q are evaluated IS pdfs: p is the true pdf and q is the importance pdf.
+        :param likelihood_ratio: likelihood ratio evaluated at the data points
         :return: percentile at the desired quantile.
         """
-        if len(pq) == 0:
+        if likelihood_ratio is None:
             return np.percentile(data, quantile, interpolation='nearest')
         else:
             sample_size = len(data)
             # likelihood ratio divided by N - 1
-            lr = pq[0] / pq[1] / (sample_size - 1)
+            lr = likelihood_ratio / (sample_size - 1)
             idx = data.argsort()
 
             if quantile > 50:  # Right tail
@@ -69,7 +69,8 @@ class ImportanceSampling:
         shifted_r = np.random.normal(size=(sample_size,)) + shift
         p = norm.pdf(shifted_r, loc=0, scale=1)
         q = norm.pdf(shifted_r, loc=shift, scale=1)
-        return self.percentile(shifted_r, self.quantile, (p, q))
+        likelihood_ratio = p / q
+        return self.percentile(shifted_r, self.quantile, likelihood_ratio)
 
     def process_sim_results(self, temp_results, sample_size, shift, sim_size, sim_time):
         return [sample_size,
@@ -116,14 +117,14 @@ def main():
                 sample_sizes=sample_sizes,
                 shifts=np.linspace(0, 6, 13),
                 sim_sizes=sim_sizes,
-                pool_size=1000)
+                pool_size=10)
     df = ImportanceSampling(**args).run()
 
     # Create a pivot table for plotting purposes
     aggfunc = {'std': np.sum}
-    index = 'shift'
-    columns = 'sample_size'
-    values = aggfunc.keys()
+    index = 'shift'          # x-axis
+    columns = 'sample_size'  # legend
+    values = aggfunc.keys()  # y-axis
     df_pivot = df.pivot_table(values=values, index=index, columns=columns, aggfunc=aggfunc)
 
     # Create a plot which displays the precision introduced by IS
@@ -131,7 +132,7 @@ def main():
     ax.plot(df_pivot, '-o')
     ax.set_xlabel('Mean shift')
     ax.set_ylabel(f'Standard deviation (based on {sim_sizes} samples)')
-    ax.set_title(f'Importance Sampling for various mean shifts and sample sizes')
+    ax.set_title('Importance Sampling for various mean shifts and sample sizes')
     ax.set_ylim([0, 0.02])
     ax.grid(b=True)
     ax.legend(labels=sample_sizes, title='Sample size')
