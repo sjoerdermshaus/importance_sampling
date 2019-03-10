@@ -152,11 +152,14 @@ class ImportanceSampling:
 
 
 def main():
+    quantile = 99.95
     sample_sizes = [int(5e3), int(1e4), int(5e4), int(1e5), int(5e5), int(1e6)]
+    shifts = np.linspace(0, 6, 13)
+    shifts = np.sort(np.append(shifts, norm.ppf(quantile / 100.0)))
     sim_sizes = 1000
-    args = dict(quantile=99.95,
+    args = dict(quantile=quantile,
                 sample_sizes=sample_sizes,
-                shifts=np.linspace(0, 6, 13),
+                shifts=shifts,
                 sim_sizes=sim_sizes,
                 pool_size=10)
     df = ImportanceSampling(**args).run()
