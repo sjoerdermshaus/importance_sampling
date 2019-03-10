@@ -153,7 +153,12 @@ class ImportanceSampling:
 
 def main():
     quantile = 99.95
-    sample_sizes = [int(5e3), int(1e4), int(5e4), int(1e5), int(5e5), int(1e6)]
+    sample_sizes = [5000,
+                    10000,
+                    50000,
+                    100000,
+                    500000,
+                    1000000]
     shifts = np.linspace(0, 6, 13)
     shifts = np.sort(np.append(shifts, norm.ppf(quantile / 100.0)))
     sim_sizes = 1000
