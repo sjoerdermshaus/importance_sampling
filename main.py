@@ -8,7 +8,6 @@ import multiprocessing as mp
 
 class ImportanceSampling:
     def __init__(self, quantile, sample_sizes=10000, shifts=3, sim_sizes=1, pool_size=1):
-
         # Initialize arguments
         self.quantile = quantile
         self.sample_sizes = [sample_sizes] if isinstance(sample_sizes, int) else sample_sizes
@@ -47,6 +46,7 @@ class ImportanceSampling:
         :param likelihood_ratio: likelihood ratio evaluated at the data points
         :return: percentile at the desired quantile.
         """
+
         if likelihood_ratio is None:
             return np.percentile(data, quantile, interpolation='nearest')
         else:
@@ -66,15 +66,16 @@ class ImportanceSampling:
             idx_nearest = np.argmin(abs(lr_cumsum - tail_probability))
             return data[idx[idx_nearest]]
 
-    def simulate_importance_sample_and_calculate_percentile(self, sample_size, shift, sim_number):
+    def generate_importance_sample_and_calculate_percentile(self, sample_size, shift, sim_number):
         """
-        Simulate one importance sample and calculate the percentile.
+        Generate one importance sample and calculate the percentile.
 
         :param sample_size: size of the sample
         :param shift: mean shift used to simulate the importance sample
         :param sim_number: set the seed for random number generator
         :return: simulated percentile
         """
+
         # Set the seed based on sim_number for parallel computing (reproducibility)
         np.random.seed(sim_number)
 
@@ -89,20 +90,36 @@ class ImportanceSampling:
         # Calculate and return the percentile
         return self.percentile(shifted_r, self.quantile, likelihood_ratio)
 
-    def process_sim_results(self, temp_results, sample_size, shift, sim_size, sim_time):
+    def process_sim_results(self, sim_percentiles, sample_size, shift, sim_size, sim_time):
+        """
+        SIM_PERCENTILES contains estimated percentiles for SIM_SIZE generated IS samples. This function calculates some
+        useful statistics to assess the performance of IS.
+        :param sim_percentiles: a list of size SIM_SIZE of simulated IS percentiles
+        :param sample_size: size of the IS samples underlying the estimated percentiles
+        :param shift: (mean) shift used for generating IS samples
+        :param sim_size: number of generated IS samples
+        :param sim_time: time in seconds spend on generating the IS samples and calculating percentiles
+        :return: a list with statistics
+        """
         return [sample_size,
                 shift,
                 sim_size,
                 self.quantile,
                 self.truth,
-                np.mean(temp_results),
-                np.std(temp_results, ddof=1),
-                np.sqrt(np.sum((temp_results - self.truth) ** 2) / (sim_size - 1)),
-                np.min(temp_results),
-                np.max(temp_results),
+                np.mean(sim_percentiles),
+                np.std(sim_percentiles, ddof=1),
+                np.sqrt(np.sum((sim_percentiles - self.truth) ** 2) / (sim_size - 1)),
+                np.min(sim_percentiles),
+                np.max(sim_percentiles),
                 sim_time]
 
     def run(self):
+        """
+        Importance Sampling loop over 1) sample sizes,
+                                      2) (mean) shifts and
+                                      3) sim sizes
+        :return: DataFrame with results
+        """
         results = []
         for sample_size in self.sample_sizes:
             for shift in self.shifts:
@@ -115,14 +132,14 @@ class ImportanceSampling:
                     # Start the simulation
                     start = time.time()
                     with mp.Pool(self.pool_size) as pool:
-                        sim_results = pool.starmap(self.simulate_importance_sample_and_calculate_percentile,
-                                                   iterable=iterable,
-                                                   chunksize=chunk_size)
+                        sim_percentiles = pool.starmap(self.generate_importance_sample_and_calculate_percentile,
+                                                       iterable=iterable,
+                                                       chunksize=chunk_size)
                     sim_time = round(time.time() - start, 4)
 
                     # Display some information
                     print(f'Sample size: {sample_size}, Shift: {shift}, Sim size: {sim_size}, Sim time: {sim_time}')
-                    results.append(self.process_sim_results(np.array(sim_results),
+                    results.append(self.process_sim_results(np.array(sim_percentiles),
                                                             sample_size,
                                                             shift,
                                                             sim_size,
@@ -135,8 +152,8 @@ class ImportanceSampling:
 
 
 def main():
-    sample_sizes = [int(5e3), int(1e4), int(5e4), int(1e5), int(1e6)]
-    sim_sizes = 10
+    sample_sizes = [int(5e3), int(1e4), int(5e4), int(1e5), int(5e5), int(1e6)]
+    sim_sizes = 1000
     args = dict(quantile=99.95,
                 sample_sizes=sample_sizes,
                 shifts=np.linspace(0, 6, 13),
