@@ -13,8 +13,10 @@ class TestImportanceSampling(TestCase):
     def test_percentile_regular_exact(self):
         for likelihood_ratio in self.likelihood_ratios:
             # Exact percentiles
-            self.assertEqual(ImSa.percentile(self.data, 20, likelihood_ratio), 2)
-            self.assertEqual(ImSa.percentile(self.data, 80, likelihood_ratio), 5)
+            self.assertEqual(ImSa.percentile(self.data,   0, likelihood_ratio), 1)
+            self.assertEqual(ImSa.percentile(self.data,  20, likelihood_ratio), 2)
+            self.assertEqual(ImSa.percentile(self.data,  80, likelihood_ratio), 5)
+            self.assertEqual(ImSa.percentile(self.data, 100, likelihood_ratio), 6)
 
     def test_percentile_regular_nearest(self):
         for likelihood_ratio in self.likelihood_ratios:
