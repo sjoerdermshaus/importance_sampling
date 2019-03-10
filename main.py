@@ -26,7 +26,8 @@ class ImportanceSampling:
                         'quantile',
                         'truth',
                         'mean',
-                        'std',
+                        'std_mean',
+                        'std_true',
                         'min',
                         'max',
                         'time']
@@ -36,10 +37,11 @@ class ImportanceSampling:
         """
          Using the 'nearest' interpolation method, PERCENTILE will give the desired percentile
          from the DATA at the supplied QUANTILE.
-         If PQ is empty, then the equally weighted or regular percentile is returned.
-         If PQ=(P, Q) is not empty, then the IS inspired likelihood ratio is used to derive
+         If LIKELIHOOD_RATIO is None, then the equally weighted/regular percentile is returned.
+         If LIKELIHOOD_RATIO is not None, then the IS inspired likelihood ratio is used to derive
          a weighted percentile.
-         Note that pq=() and (p,p) will give the regular percentile.
+         Note that None and an array of ones will both give the regular percentile.
+
         :param data: numpy array
         :param quantile: quantile as percentage, e.g. 90 for the 90% percentile.
         :param likelihood_ratio: likelihood ratio evaluated at the data points
@@ -64,12 +66,27 @@ class ImportanceSampling:
             idx_nearest = np.argmin(abs(lr_cumsum - tail_probability))
             return data[idx[idx_nearest]]
 
-    def simulate(self, sample_size, shift, sim_number):
+    def simulate_importance_sample_and_calculate_percentile(self, sample_size, shift, sim_number):
+        """
+        Simulate one importance sample and calculate the percentile.
+
+        :param sample_size: size of the sample
+        :param shift: mean shift used to simulate the importance sample
+        :param sim_number: set the seed for random number generator
+        :return: simulated percentile
+        """
+        # Set the seed based on sim_number for parallel computing (reproducibility)
         np.random.seed(sim_number)
+
+        # Generate the importance sample by adding (mean) shift (also called translation)
         shifted_r = np.random.normal(size=(sample_size,)) + shift
+
+        # Calculate p, q and the likelihood ratio
         p = norm.pdf(shifted_r, loc=0, scale=1)
         q = norm.pdf(shifted_r, loc=shift, scale=1)
         likelihood_ratio = p / q
+
+        # Calculate and return the percentile
         return self.percentile(shifted_r, self.quantile, likelihood_ratio)
 
     def process_sim_results(self, temp_results, sample_size, shift, sim_size, sim_time):
@@ -80,6 +97,7 @@ class ImportanceSampling:
                 self.truth,
                 np.mean(temp_results),
                 np.std(temp_results, ddof=1),
+                np.sqrt(np.sum((temp_results - self.truth) ** 2) / (sim_size - 1)),
                 np.min(temp_results),
                 np.max(temp_results),
                 sim_time]
@@ -97,12 +115,18 @@ class ImportanceSampling:
                     # Start the simulation
                     start = time.time()
                     with mp.Pool(self.pool_size) as pool:
-                        sim_results = pool.starmap(self.simulate, iterable, chunksize=chunk_size)
+                        sim_results = pool.starmap(self.simulate_importance_sample_and_calculate_percentile,
+                                                   iterable=iterable,
+                                                   chunksize=chunk_size)
                     sim_time = round(time.time() - start, 4)
 
                     # Display some information
                     print(f'Sample size: {sample_size}, Shift: {shift}, Sim size: {sim_size}, Sim time: {sim_time}')
-                    results.append(self.process_sim_results(sim_results, sample_size, shift, sim_size, sim_time))
+                    results.append(self.process_sim_results(np.array(sim_results),
+                                                            sample_size,
+                                                            shift,
+                                                            sim_size,
+                                                            sim_time))
 
         # Collect the result in a DataFrame
         df = pd.DataFrame(results, columns=self.columns)
@@ -112,7 +136,7 @@ class ImportanceSampling:
 
 def main():
     sample_sizes = [int(5e3), int(1e4), int(5e4), int(1e5), int(1e6)]
-    sim_sizes = 1000
+    sim_sizes = 10
     args = dict(quantile=99.95,
                 sample_sizes=sample_sizes,
                 shifts=np.linspace(0, 6, 13),
@@ -121,7 +145,7 @@ def main():
     df = ImportanceSampling(**args).run()
 
     # Create a pivot table for plotting purposes
-    aggfunc = {'std': np.sum}
+    aggfunc = {'std_true': np.sum}
     index = 'shift'          # x-axis
     columns = 'sample_size'  # legend
     values = aggfunc.keys()  # y-axis
