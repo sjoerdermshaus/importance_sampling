@@ -156,12 +156,12 @@ def main():
     sample_sizes = [5000,
                     10000,
                     50000,
-                    100000,
-                    500000,
-                    1000000]
+                    100000]#,
+                    #500000,
+                    #1000000]
     shifts = np.linspace(0, 6, 13)
     shifts = np.sort(np.append(shifts, norm.ppf(quantile / 100.0)))
-    sim_sizes = 1000
+    sim_sizes = 10
     args = dict(quantile=quantile,
                 sample_sizes=sample_sizes,
                 shifts=shifts,
