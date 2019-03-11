@@ -14,7 +14,7 @@ def run():
                     1000000]
     shifts = np.linspace(0, 6, 13)
     shifts = np.sort(np.append(shifts, norm.ppf(quantile / 100.0)))
-    sim_sizes = 10
+    sim_sizes = 1000
     args = dict(quantile=quantile,
                 sample_sizes=sample_sizes,
                 shifts=shifts,
