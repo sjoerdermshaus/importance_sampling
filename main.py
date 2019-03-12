@@ -48,10 +48,10 @@ def create_plot(figsize=7, args=None, df=None):
     ax.grid(b=True)
     ax.legend(labels=args["sample_sizes"], title='Sample size')
     fig.savefig('results.png')
-    return fig
+    return df, fig
 
 
 if __name__ == '__main__':
     # my_df = ImportanceSampling(**my_args).run()
-    my_fig = create_plot(10)
-    plt.show(my_fig)
+    df, fig = create_plot(10)
+    plt.show(fig)
