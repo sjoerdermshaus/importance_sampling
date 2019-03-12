@@ -146,5 +146,5 @@ class ImportanceSampling:
 
         # Collect the result in a DataFrame
         df = pd.DataFrame(results, columns=self.columns)
-        df.to_excel('results.xlsx')
+        df.to_excel('results.xlsx', index=False)
         return df

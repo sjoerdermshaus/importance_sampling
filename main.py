@@ -2,9 +2,10 @@ import numpy as np
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 from src.importance_sampling import ImportanceSampling
+import pandas as pd
 
 
-def run():
+def define_run():
     quantile = 99.95
     sample_sizes = [5000,
                     10000,
@@ -20,10 +21,14 @@ def run():
                 shifts=shifts,
                 sim_sizes=sim_sizes,
                 pool_size=10)
-    return args, ImportanceSampling(**args).run()
+    return args
 
 
-def create_plot(args, df):
+def create_plot(figsize=7, args=None, df=None):
+
+    if args is None and df is None:
+        args = define_run()
+        df = pd.read_excel('results.xlsx')
 
     # Create a pivot table for plotting purposes
     aggfunc = {'std_true': np.sum}
@@ -33,7 +38,8 @@ def create_plot(args, df):
     df_pivot = df.pivot_table(values=values, index=index, columns=columns, aggfunc=aggfunc)
 
     # Create a plot which displays the precision introduced by IS
-    fig, ax = plt.subplots()
+    fig = plt.figure(figsize=(figsize, int(1080 / 1920 * figsize)))
+    ax = fig.gca()
     ax.plot(df_pivot, '-o')
     ax.set_xlabel('Mean shift')
     ax.set_ylabel(f'Standard deviation (based on {args["sim_sizes"]} samples)')
@@ -46,6 +52,6 @@ def create_plot(args, df):
 
 
 if __name__ == '__main__':
-    my_args, my_df = run()
-    my_fig = create_plot(my_args, my_df)
+    # my_df = ImportanceSampling(**my_args).run()
+    my_fig = create_plot(10)
     plt.show(my_fig)
