@@ -53,5 +53,5 @@ def create_plot(figsize=7, args=None, df=None):
 
 if __name__ == '__main__':
     # my_df = ImportanceSampling(**my_args).run()
-    df, fig = create_plot(10)
-    plt.show(fig)
+    my_df, my_fig = create_plot(figsize=12)
+    plt.show(my_fig)
