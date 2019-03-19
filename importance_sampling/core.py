@@ -7,6 +7,7 @@ import multiprocessing as mp
 
 class ImportanceSampling:
     def __init__(self, quantile, sample_sizes=10000, shifts=3, sim_sizes=1, pool_size=1):
+
         # Initialize arguments
         self.quantile = quantile
         self.sample_sizes = [sample_sizes] if isinstance(sample_sizes, int) else sample_sizes

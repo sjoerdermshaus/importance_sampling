@@ -1,6 +1,6 @@
 from unittest import TestCase
 import numpy as np
-from src.importance_sampling import ImportanceSampling
+from importance_sampling.core import ImportanceSampling
 from scipy.stats import norm
 
 
