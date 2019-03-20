@@ -26,7 +26,7 @@ def define_run():
 
 
 if __name__ == '__main__':
-    preload = False
+    preload = True
     my_args = define_run()
     if preload:
         my_df = pd.read_excel('results.xlsx')
