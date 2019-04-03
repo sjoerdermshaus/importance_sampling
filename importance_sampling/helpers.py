@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def create_plot(args, df, figsize=7, dpi=500):
+def create_and_save_plot(args, df, figsize=7, dpi=500):
 
     # Create a pivot table for plotting purposes
     aggfunc = {'std_true': np.sum}

@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import norm
 import matplotlib.pyplot as plt
 from importance_sampling.core import ImportanceSampling
-from importance_sampling.helpers import create_plot
+from importance_sampling.helpers import create_and_save_plot
 import pandas as pd
 
 
@@ -16,18 +16,18 @@ def define_run():
                     1000000]
     shifts = np.linspace(0, 6, 13)
     shifts = np.sort(np.append(shifts, norm.ppf(quantile / 100.0)))
-    sim_sizes = 10
+    sim_sizes = 2
     kwargs = dict(quantile=quantile,
                   sample_sizes=sample_sizes,
                   shifts=shifts,
                   sim_sizes=sim_sizes,
-                  pool_size=10)
+                  pool_size=1)
     return kwargs
 
 
 if __name__ == '__main__':
     preload = False
-    my_args = define_run()
-    my_df = pd.read_excel('results.xlsx') if preload else ImportanceSampling(**my_args).run()
-    my_fig = create_plot(args=my_args, df=my_df, figsize=12, dpi=500)
+    my_kwargs = define_run()
+    my_df = pd.read_excel('results.xlsx') if preload else ImportanceSampling(**my_kwargs).run()
+    my_fig = create_and_save_plot(args=my_kwargs, df=my_df, figsize=12, dpi=500)
     plt.show(my_fig)
