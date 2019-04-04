@@ -19,7 +19,8 @@ def create_and_save_plot(args, df, figsize=7, dpi=500):
     ax.plot(df_pivot, '-o')
     ax.set_xlabel('Mean shift')
     ax.set_ylabel(f'Standard deviation (based on {args["sim_sizes"]} samples)')
-    ax.set_title('Importance Sampling for various mean shifts and sample sizes')
+    ax.set_title(f'Estimating the {args["quantile"]}%-percentile of the standard normal distribution\n'
+                 f'using Importance Sampling for various mean shifts and sample sizes')
     ax.set_ylim([0, 0.02])
     ax.grid(b=True)
     ax.legend(labels=args["sample_sizes"], title='Sample size')
